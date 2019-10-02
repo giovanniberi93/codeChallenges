@@ -1,62 +1,41 @@
 #include <iostream>
+#include <map>
 #include <vector>
-#include <list>
-#include <set>
 
-
-class FruitInBucket 
+class Solution 
 {
 public:
-
-    FruitInBucket()
-        : sum(0)
+    int totalFruit(std::vector<int>& tree)
     {
-    }
+        if (tree.size() < 3)
+            return tree.size();
 
-    int sum;
-    std::set<int> fruitTypes;
-};
-
-using FruitIterator = std::vector<FruitInBucket>::iterator;
-
-class Solution {
-public:
-    int totalFruit(std::vector<int>& tree) {
-        std::vector<FruitInBucket> buckets;
-        int max;
-        if (tree.empty())
-            return 0;
-
-        max = 0;
-        for (auto it = tree.cbegin(); it != tree.cend(); ++it)
+        int intervalStart = 0;
+        int intervalEnd = 0;
+        std::map<int, int> fruitCount;
+        int maxLength = 0;
+        
+        while(intervalEnd != tree.size())
         {
-            std::vector<FruitIterator> indexToDelete;
-
-            FruitInBucket bucketStartingFromCurrentTree;
-            // insert from the beginning to make it easier
-            // to delete later
-            if (it == tree.cbegin() ||  *(it-1) != *it)
-                buckets.insert(buckets.begin(), bucketStartingFromCurrentTree);
- 
-            for (auto itBucket = buckets.begin(); itBucket != buckets.end(); ++itBucket)
+            if (fruitCount.size() == 2 && fruitCount.find(tree[intervalEnd]) == fruitCount.end())
             {
-                 itBucket->fruitTypes.insert(*it);
-                 if (itBucket->fruitTypes.size() > 2)
-                 {
-                     indexToDelete.push_back(itBucket);
-                 }
-                 else
-                 {
-                     itBucket->sum++;
-                     if (itBucket->sum > max)
-                         max = itBucket->sum;
-                 }
+                while(fruitCount.size() == 2)
+                {
+                    fruitCount[tree[intervalStart]]--;
+                    if (fruitCount[tree[intervalStart]] == 0) 
+                        fruitCount.erase(tree[intervalStart]);
+                    intervalStart++;
+                }
             }
-            // delete buckets with >= 3 
-            for (auto el : indexToDelete)
-               buckets.erase(el);
+
+            if (fruitCount.find(tree[intervalEnd]) == fruitCount.end())
+                fruitCount.insert(std::pair<int, int>(tree[intervalEnd], 1));
+            else
+                fruitCount[tree[intervalEnd]]++;
+            maxLength = std::max(maxLength, intervalEnd - intervalStart + 1);
+            intervalEnd++;
         }
-        return max;
+        return maxLength;
     }
 };
 
@@ -64,7 +43,7 @@ public:
 int main(int argc, char **argv)
 {
     Solution s;
-    std::vector<int> input = {1,0,1,4,1,4,1,2,3};
+    std::vector<int> input = {3,3,3,1,2,1,1,2,3,3,4};
     int res = s.totalFruit(input);
     std::cout << res << std::endl;
 }
