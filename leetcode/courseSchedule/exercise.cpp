@@ -1,67 +1,71 @@
 #include <vector>
-#include <algorithm>
-#include <queue>
 #include <iostream>
 #include <set>
-#include <map>
 
 class Solution {
-public:
-    bool canFinish(int numCourses, std::vector<std::vector<int>>& prerequisites) 
+public: 
+    int nextRoot(std::vector<bool> visited)
     {
-        std::map<int, std::set<int>> outgoingArcs;
-        std::map<int, std::set<int>> ingoingArcs;
-        std::set<int> nodesWithNoIngoingArcs;
-
-        for (auto edge : prerequisites)
-        {
-            outgoingArcs.insert(std::pair<int, std::set<int>>(edge[0], std::set<int>()));
-            ingoingArcs.insert(std::pair<int, std::set<int>>(edge[1], std::set<int>()));
-            nodesWithNoIngoingArcs.insert(edge[0]);
-        }
-        for (auto edge : prerequisites)
-        {
-            outgoingArcs[edge[0]].insert(edge[1]);
-            ingoingArcs[edge[1]].insert(edge[0]);
-            nodesWithNoIngoingArcs.erase(edge[1]);
-        }
-
-        std::queue<int> nodesToVisit;
-        for (auto node : nodesWithNoIngoingArcs)
-            nodesToVisit.push(node);
-        while(!nodesToVisit.empty())
-        {
-            int const currentNode = nodesToVisit.front();
-            nodesToVisit.pop();
-            // delete outgoing arcs
-            for (auto pointedNode : outgoingArcs[currentNode])
-            {
-                ingoingArcs[pointedNode].erase(currentNode);
-                if (ingoingArcs[pointedNode].size() == 0)
-                    nodesToVisit.push(pointedNode);
-            }
-            // delete node
-            outgoingArcs.erase(currentNode);
-        }
-
-        // if there are nodes left, there was a loop
-        return outgoingArcs.size() == 0;
+        for(int i = 0; i < visited.size(); ++i)
+            if (!visited[i] && outgoingArcs[i].size() > 0)
+                return i;
+        return -1;
     }
 
+    bool canFinish(int numCourses, std::vector<std::vector<int>>& prerequisites) 
+    {
+        outgoingArcs = std::vector<std::set<int>>(numCourses, std::set<int>());
+        isNodeInSameRecursion = std::vector<bool>(numCourses, false);
+        isNodeVisited = std::vector<bool>(numCourses, false);
+
+        for (auto edge : prerequisites)
+            outgoingArcs[edge[0]].insert(edge[1]);
+
+        int nonVisitedNode = nextRoot(isNodeVisited);
+        while(nonVisitedNode >= 0) 
+        {
+            bool loopFound = dfs(nonVisitedNode);
+            if (loopFound)
+                return false;
+            nonVisitedNode = nextRoot(isNodeVisited);
+        }
+
+        return true;
+    }
+
+    bool dfs(int const rootNode)
+    {
+        isNodeVisited[rootNode] = true;
+        isNodeInSameRecursion[rootNode] = true;
+        bool subtreeResult = false;
+        for (auto reachableNode : outgoingArcs[rootNode])
+        {
+            if (isNodeInSameRecursion[reachableNode])
+                return true;
+            if (!isNodeVisited[reachableNode])
+            {
+                subtreeResult = dfs(reachableNode);
+                if (subtreeResult)
+                    break;
+            }
+        }
+        isNodeInSameRecursion[rootNode] = false;
+        return subtreeResult;
+    }
+
+    std::vector<bool> isNodeVisited;
+    std::vector<std::set<int>> outgoingArcs;
+    std::vector<bool> isNodeInSameRecursion;
 };
 
 int main(int argc, char **argv) 
 { 
     std::vector<std::vector<int>> edges;
     Solution s;
-    edges.push_back({1,0});
-    edges.push_back({2,6});
-    edges.push_back({1,7});
-    edges.push_back({6,4});
-    edges.push_back({7,0});
-    edges.push_back({0,5});
-    bool res = s.canFinish(8, edges);
+    edges.push_back({1, 0});
+    edges.push_back({0, 2});
+
+    bool res = s.canFinish(2, edges);
 
     std::cout << res << std::endl;
 }
-
