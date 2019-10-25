@@ -9,54 +9,45 @@ class Solution {
 public:
     bool canFinish(int numCourses, std::vector<std::vector<int>>& prerequisites) 
     {
-        std::map<int, std::vector<int>> fanout;
+        std::map<int, std::set<int>> outgoingArcs;
+        std::map<int, std::set<int>> ingoingArcs;
+        std::set<int> nodesWithNoIngoingArcs;
 
-        for (int i = 0; i < numCourses; ++i)
+        for (auto edge : prerequisites)
         {
-            fanout.insert(std::pair<int, std::vector<int>>(i, std::vector<int>()));
+            outgoingArcs.insert(std::pair<int, std::set<int>>(edge[0], std::set<int>()));
+            ingoingArcs.insert(std::pair<int, std::set<int>>(edge[1], std::set<int>()));
+            nodesWithNoIngoingArcs.insert(edge[0]);
         }
-        for (int i = 0; i < prerequisites.size(); ++i)
-            fanout.at(prerequisites[i][0]).push_back(prerequisites[i][1]);
-
-        for (int i = 0; i < numCourses; ++i)
+        for (auto edge : prerequisites)
         {
-            if(hasCycle(i, fanout))
-                return false;
+            outgoingArcs[edge[0]].insert(edge[1]);
+            ingoingArcs[edge[1]].insert(edge[0]);
+            nodesWithNoIngoingArcs.erase(edge[1]);
         }
-        return true;
-    }
 
-    bool hasCycle(int const rootNode, std::map<int, std::vector<int>> const fanout)
-    {
-        std::vector<bool> hasBeenVisited(fanout.size(), false);
-        std::vector<bool> alreadyInQueue(fanout.size(), false);
-        std::queue<int> toBeVisited;
-        
-        toBeVisited.push(rootNode);
-        while(!toBeVisited.empty())
+        std::queue<int> nodesToVisit;
+        for (auto node : nodesWithNoIngoingArcs)
+            nodesToVisit.push(node);
+        while(!nodesToVisit.empty())
         {
-            int currentNode = toBeVisited.front();
-            toBeVisited.pop();
-
-            alreadyInQueue[currentNode] = false;
-            if (hasBeenVisited[currentNode])
-                return true;
-            else
-                hasBeenVisited[currentNode] = true;
-
-            for (int i = 0; i < fanout.at(currentNode).size(); ++i)
+            int const currentNode = nodesToVisit.front();
+            nodesToVisit.pop();
+            // delete outgoing arcs
+            for (auto pointedNode : outgoingArcs[currentNode])
             {
-                int consideredNode = fanout.at(currentNode)[i];
-                if (!alreadyInQueue[consideredNode])
-                {
-                    alreadyInQueue[consideredNode] = true;
-                    toBeVisited.push(fanout.at(currentNode)[i]);
-                }
+                ingoingArcs[pointedNode].erase(currentNode);
+                if (ingoingArcs[pointedNode].size() == 0)
+                    nodesToVisit.push(pointedNode);
             }
-
+            // delete node
+            outgoingArcs.erase(currentNode);
         }
-        return false;
+
+        // if there are nodes left, there was a loop
+        return outgoingArcs.size() == 0;
     }
+
 };
 
 int main(int argc, char **argv) 
