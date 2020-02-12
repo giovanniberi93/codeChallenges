@@ -34,9 +34,14 @@ public:
 
             for(int valuesInserted = 0; valuesInserted < mainValueOccurences; ++valuesInserted)
             {
-                result.push_back(mainValue);
+                int interposedValue;
                 if (result.size() == barcodes.size())
                     return result;
+                if (result.size() == barcodes.size() - 1)
+                {
+                    result.push_back(mainValue);
+                    return result;
+                }
 
                 int valueToInterponeIndex;
                 for (valueToInterponeIndex = currentMainValueIndex + 1;
@@ -48,8 +53,19 @@ public:
                     if (occurrences[valueToInterponeIndex + 1].second < occurrences[valueToInterponeIndex].second) 
                         break;
                 }
-                result.push_back(occurrences[valueToInterponeIndex].first);
                 occurrences[valueToInterponeIndex].second--;
+
+                interposedValue = occurrences[valueToInterponeIndex].first;
+                if (result.size() > 0 && result[result.size() - 1] == mainValue)
+                {
+                    result.push_back(interposedValue);
+                    result.push_back(mainValue);
+                }
+                else
+                {
+                    result.push_back(mainValue);
+                    result.push_back(interposedValue);
+                }
             }
         }
         return result;
@@ -69,7 +85,8 @@ int main(int argc, char **argv)
     Solution s;
 
     // std::vector<int> input = {1,1,1,2,2,2};
-    std::vector<int> input = {7,7,7,8,5,7,5,5,5,8};
+    // std::vector<int> input = {7,7,7,8,5,7,5,5,5,8};
+    std::vector<int> input = {1};
     std::vector<int> result = s.rearrangeBarcodes(input);
 
     printVector(result);
